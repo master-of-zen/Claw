@@ -1,6 +1,9 @@
 use serde_json::{Result, Value};
 use std::fmt::Error;
 
+mod ffprobing;
+mod srt;
+
 use std::fs::File;
 use std::io::BufReader;
 use std::path::PathBuf;
@@ -12,31 +15,47 @@ use clap::Parser;
 struct Args {
     /// Input file
     #[clap(short, parse(from_os_str), required = true)]
-    pub input: PathBuf,
+    pub input_json: PathBuf,
+
+    /// Input video
+    #[clap(short, parse(from_os_str), required = true)]
+    pub video_input: PathBuf,
 
     /// Mode of operation
     #[clap(long)]
-    mode: String,
+    pub mode: Option<String>,
 
     /// Planes to extract
     #[clap(long)]
-    planes: Option<String>,
+    pub planes: Option<String>,
 
     /// Output
     #[clap(short, long)]
-    output: Option<String>,
+    pub output: Option<String>,
+}
+
+struct Frame {
+    entry: u64,
+    vmaf: f64,
+    time_string: String,
+    frame_type: String,
+}
+
+impl Frame {
+    pub fn new(entry: u64, vmaf: f64, time_start: String, time_end: String) {}
 }
 
 fn main() {
     let args = Args::parse();
 
-    let input = args.input;
+    let input = args.input_json;
     let js = read_json_file(input);
 
     // get frames
 
     let js = js.get("frames").unwrap().as_array().unwrap();
 
+    // Literally hazardous code
     let vmaf: Vec<(u64, f64)> = js
         .into_iter()
         .map(|x| {
@@ -52,7 +71,13 @@ fn main() {
         })
         .collect::<Vec<(u64, f64)>>();
 
-    println!("{:#?}", vmaf);
+    let data = ffprobing::run_probe(args.video_input);
+    println!("{:#?}", &vmaf);
+    println!("{:#?}", &data);
+}
+
+fn write_file() {
+    ()
 }
 
 fn read_json_file(path: PathBuf) -> Value {
@@ -63,6 +88,7 @@ fn read_json_file(path: PathBuf) -> Value {
     dt
 }
 
-fn vmaf_subtitles() {
-    ()
+fn vmaf_subtitles(counter: u64, vmaf: f64) -> String {
+    let vmaf_stamp = format!("{}\n", &vmaf);
+    vmaf_stamp
 }
