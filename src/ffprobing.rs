@@ -42,3 +42,25 @@ pub fn run_probe(path: PathBuf) -> Vec<(String, String, u64)> {
 
     data
 }
+
+pub fn get_duration(path: PathBuf) -> String {
+    let mut ffprobe = Command::new("ffprobe");
+    ffprobe.args(&[
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-sexagesimal",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
+    ]);
+
+    ffprobe.arg(path.as_os_str());
+
+    let out = ffprobe.output().unwrap();
+    let mut data = String::from_utf8_lossy(&out.stdout).to_string();
+
+    data.truncate(data.len() - 4);
+
+    data
+}

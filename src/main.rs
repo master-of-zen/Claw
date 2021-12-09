@@ -47,12 +47,10 @@ impl Frame {
 
 fn main() {
     let args = Args::parse();
-
     let input = args.input_json;
     let js = read_json_file(input);
 
     // get frames
-
     let js = js.get("frames").unwrap().as_array().unwrap();
 
     // Literally hazardous code
@@ -71,9 +69,20 @@ fn main() {
         })
         .collect::<Vec<(u64, f64)>>();
 
-    let data = ffprobing::run_probe(args.video_input);
+    let data = ffprobing::run_probe(args.video_input.clone());
+
+    let duration = crate::ffprobing::get_duration(args.video_input);
     println!("{:#?}", &vmaf);
     println!("{:#?}", &data);
+    println!("{:#?}", duration);
+
+
+
+
+
+
+
+
 }
 
 fn write_file() {
