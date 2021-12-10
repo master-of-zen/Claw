@@ -1,10 +1,8 @@
-use serde_json::{Result, Value};
-use std::fmt::Error;
+use serde_json::Value;
 
 mod ffprobing;
-mod srt;
 
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::BufReader;
 use std::path::PathBuf;
 
@@ -25,24 +23,13 @@ struct Args {
     #[clap(long)]
     pub mode: Option<String>,
 
-    /// Planes to extract
+    /// Planes to extqract
     #[clap(long)]
     pub planes: Option<String>,
 
     /// Output
     #[clap(short, long)]
     pub output: Option<String>,
-}
-
-struct Frame {
-    entry: u64,
-    vmaf: f64,
-    time_string: String,
-    frame_type: String,
-}
-
-impl Frame {
-    pub fn new(entry: u64, vmaf: f64, time_start: String, time_end: String) {}
 }
 
 fn main() {
@@ -71,18 +58,35 @@ fn main() {
 
     let data = ffprobing::run_probe(args.video_input.clone());
 
-    let duration = crate::ffprobing::get_duration(args.video_input);
-    println!("{:#?}", &vmaf);
-    println!("{:#?}", &data);
-    println!("{:#?}", duration);
+    let mut all_time_codes: Vec<String> = data.iter().map(|(x, _y, _z)| x.clone()).collect();
 
+    let duration = crate::ffprobing::get_duration(args.video_input.clone());
+    all_time_codes.push(duration.clone());
 
+    let start_finish: Vec<(String, String)> = all_time_codes[..all_time_codes.len() - 1]
+        .iter()
+        .zip(all_time_codes[1..].into_iter())
+        .map(|(x, y)| (x.clone(), y.clone()))
+        .collect();
 
+    let frames: Vec<String> = vmaf
+        .iter()
+        .zip(start_finish.iter())
+        .map(|(x, y)| make_srt_string(x.0, y.0.clone(), y.1.clone(), x.1))
+        .collect();
 
+    let srt = frames.join("");
 
+    dbg!(frames);
+    let destination = args.video_input.with_extension("srt");
+    fs::write(destination, srt).expect("Unable to write file");
+}
 
+pub fn make_srt_string(counter: u64, start_time: String, end_time: String, vmaf: f64) -> String {
+    let timestamp = format!("{} --> {}", start_time, end_time).replace('.', ",");
+    let subtitle = format!("Frame: {}, Vmaf: {}\n\n", counter, vmaf);
 
-
+    format!("{}\n{}\n{}", counter, timestamp, subtitle)
 }
 
 fn write_file() {
@@ -95,9 +99,4 @@ fn read_json_file(path: PathBuf) -> Value {
     let reader = BufReader::new(file);
     let dt: Value = serde_json::from_reader(reader).unwrap();
     dt
-}
-
-fn vmaf_subtitles(counter: u64, vmaf: f64) -> String {
-    let vmaf_stamp = format!("{}\n", &vmaf);
-    vmaf_stamp
 }
