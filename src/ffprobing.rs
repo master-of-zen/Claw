@@ -3,7 +3,14 @@ use std::{path::PathBuf, process::Command, str::FromStr};
 
 pub fn run_probe(path: PathBuf) -> Vec<(String, String, u64)> {
     let mut ffprobe = Command::new("ffprobe");
-    ffprobe.args(&["-show_frames", "-sexagesimal", "-print_format", "json"]);
+    ffprobe.args(&[
+        "-show_frames",
+        "-select_streams",
+        "v",
+        "-sexagesimal",
+        "-print_format",
+        "json",
+    ]);
 
     ffprobe.arg(path.as_os_str());
 
