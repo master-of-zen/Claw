@@ -77,7 +77,6 @@ fn main() {
 
     let srt = frames.join("");
 
-    dbg!(frames);
     let destination = args.video_input.with_extension("srt");
     fs::write(destination, srt).expect("Unable to write file");
 }

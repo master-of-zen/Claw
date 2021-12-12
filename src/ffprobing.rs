@@ -30,8 +30,6 @@ pub fn run_probe(path: PathBuf) -> Vec<(String, String, u64)> {
         .clone()
         .iter()
         .map(|x| {
-            dbg!(x);
-
             let start_time = x
                 .get("best_effort_timestamp_time")
                 .unwrap()
