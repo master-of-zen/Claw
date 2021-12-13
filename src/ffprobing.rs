@@ -1,9 +1,11 @@
-use serde_json::{Result, Value};
+use serde_json::Value;
 use std::{path::PathBuf, process::Command, str::FromStr};
 
 pub fn run_probe(path: PathBuf) -> Vec<(String, String, u64)> {
     let mut ffprobe = Command::new("ffprobe");
     ffprobe.args(&[
+        "-threads",
+        "24",
         "-show_frames",
         "-select_streams",
         "v",
