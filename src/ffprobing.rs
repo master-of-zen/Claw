@@ -20,7 +20,35 @@ pub fn run_probe(path: PathBuf) -> Vec<(String, String, u64)> {
 
     let stdout = String::from_utf8_lossy(&out.stdout);
 
-    let js = Value::from_str(stdout.as_ref()).unwrap();
+    let data = parse_ffprobe_json(stdout.as_ref().to_string());
+
+    data
+}
+
+pub fn get_duration(path: PathBuf) -> String {
+    let mut ffprobe = Command::new("ffprobe");
+    ffprobe.args(&[
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-sexagesimal",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
+    ]);
+
+    ffprobe.arg(path.as_os_str());
+
+    let out = ffprobe.output().unwrap();
+    let mut data = String::from_utf8_lossy(&out.stdout).to_string();
+
+    data.truncate(data.len() - 4);
+
+    data
+}
+
+fn parse_ffprobe_json(stdout: String) -> Vec<(String, String, u64)> {
+    let js = Value::from_str(&stdout).unwrap();
 
     let js = js.get("frames").unwrap();
 
@@ -48,28 +76,6 @@ pub fn run_probe(path: PathBuf) -> Vec<(String, String, u64)> {
             (start_time, pict_type, is_keyframe)
         })
         .collect::<Vec<(String, String, u64)>>();
-
-    data
-}
-
-pub fn get_duration(path: PathBuf) -> String {
-    let mut ffprobe = Command::new("ffprobe");
-    ffprobe.args(&[
-        "-v",
-        "error",
-        "-show_entries",
-        "format=duration",
-        "-sexagesimal",
-        "-of",
-        "default=noprint_wrappers=1:nokey=1",
-    ]);
-
-    ffprobe.arg(path.as_os_str());
-
-    let out = ffprobe.output().unwrap();
-    let mut data = String::from_utf8_lossy(&out.stdout).to_string();
-
-    data.truncate(data.len() - 4);
 
     data
 }
